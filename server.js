@@ -15,8 +15,8 @@ var wss = new WebSocketServer({
       });
 var port = process.env.PORT || 8080;
 //MongoDB
-//dburi='mongodb://weapp:weapp-dev@127.0.0.1:27017/weapp?connectTimeoutMS=300000'
-dburi='mongodb://127.0.0.1:27017/local'
+dburi='mongodb://quanminzhentanshe:quanminzhentansheEfksice413478545921@127.0.0.1:27017/weapp?connectTimeoutMS=300000'
+//dburi='mongodb://127.0.0.1:27017/local'
 var databasepromise=mongoose.connect(dburi, {
   useMongoClient: true
   /* other options */
@@ -34,7 +34,7 @@ app.use(bodyParser.urlencoded({
 app.use(bodyParser.json());
 app.use(function (req, res, next) {
     // Website you wish to allow to connect
-		var allowedOrigins = ['http://localhost:3000', 'https://chinabackend.bestlarp.com'];
+		var allowedOrigins = ['http://localhost:3000', 'https://bestlarp.com'];
 	  var origin = req.headers.origin;
 	  if(allowedOrigins.indexOf(origin) > -1){
 	       res.setHeader('Access-Control-Allow-Origin', origin);
