@@ -15,7 +15,7 @@ var wss = new WebSocketServer({
       });
 var port = process.env.PORT || 8080;
 //MongoDB
-dburi='mongodb://quanminzhentanshe:quanminzhentansheEfksice413478545921@127.0.0.1:27017/weapp?connectTimeoutMS=300000'
+dburi='mongodb://quanminzhentanshe:quanminzhentanshe4785459Efksice41321@127.0.0.1:27017/weapp?connectTimeoutMS=300000'
 //dburi='mongodb://127.0.0.1:27017/local'
 var databasepromise=mongoose.connect(dburi, {
   useMongoClient: true
@@ -110,7 +110,11 @@ wss.on('connection', function connection(ws) {
 		if (data.message=="join"){
 		ws.id= data.table_id
 		}
-    wss.broadcast(message,data.table_id);
+		if (data.message=="ping"){
+			ws.send(message)
+		}else{
+	    wss.broadcast(message,data.table_id);
+		}
     });
 });
 server.on('request', app);
