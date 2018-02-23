@@ -6,7 +6,11 @@ var http = require('http');
 var server = http.createServer();
 var url = require('url');
 var fs = require('fs');
+var md5= require('md5')
+var appdb  = require('./models/app');
 var request = require('request')
+var timestamp = require('unix-timestamp')
+var parseString = require('xml2js').parseString
 var userlist = {}
 var WebSocketServer = require('ws').Server;
 var wss = new WebSocketServer({
@@ -21,6 +25,9 @@ var databasepromise=mongoose.connect(dburi, {
   useMongoClient: true
   /* other options */
 });
+const appid = "wxf0487d45228f02d3";
+const mch_id = "1492985202"
+const mch_key = "6e11af317a7a85a14b3387d5c6c71d3a"
 databasepromise.then(
 	(db) => {console.log(db._readyState) },
   err => {console.log(err)}
@@ -42,7 +49,7 @@ app.use(function (req, res, next) {
     // Request methods you wish to allow
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
     // Request headers you wish to allow
-    res.setHeader('Access-Control-Allow-Headers', 'Origin, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, X-Response-Time, X-PINGOTHER, X-CSRF-Token,Authorization');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, X-Requested-With, X-Response-Time, X-PINGOTHER, X-CSRF-Token,Authorization');
     // Set to true if you need the website to include cookies in the requests sent
     // to the API (e.g. in case you use sessions)
     res.setHeader('Access-Control-Allow-Credentials', true);
@@ -72,16 +79,64 @@ app.post('/uploadimage',function(req, res) {
 app.use('/auth',require('./routes/auth'));
 app.use('/user',require('./routes/user'));
 app.use('/unionid',function(req,res){
-	var weixinurl = "https://api.weixin.qq.com/sns/jscode2session?"
+	const weixinurl = "https://api.weixin.qq.com/sns/jscode2session?"
 	var appid = req.query.appid
 	var secret = req.query.secret
 	var js_code= req.query.js_code
 	var grant_type="authorization_code"
 	request(weixinurl+'appid='+appid+'&secret='+secret+'&js_code='+js_code+'&grant_type='+grant_type, function (error, response, body) {
 	 var result=JSON.parse(body)
+	 console.log(result)
+	 var openidpromise = appdb.find({ type:'openid',id: result.openid }).exec()
+	 openidpromise.then(openid=>{
+		 console.log(openid)
+		 if (openid.length==1) {
+			 var newlogin = openid[0].login.concat([new Date()])
+			 	appdb.findOneAndUpdate({ id: result.openid }, { login: newlogin }).exec()
+		 } else {
+			 var newopenid = new appdb({
+				 type: 'openid',
+				 id: result.openid
+			 });
+			 newopenid.save(function (err, newuser) {
+				 });
+		 }
+	 })
 	 res.send(result.openid);
 	 //console.log(result.openid);
 	 });
+});
+app.post('/unifiedorder',function(req,res){
+	const orderurl = "https://api.mch.weixin.qq.com/pay/unifiedorder"
+	var headers = {'Content-Type': 'application/xml'}
+	var trade_no = timestamp.now()*1000000+Math.floor(Math.random() * Math.floor(1000))
+	if (!req.body.openid) return res.status(400).send('No openid.')
+	var openid = req.body.openid
+	var total_fee = req.body.total_fee
+	console.log(req.body.total_fee)
+	var signstring="appid=wxf0487d45228f02d3&body=test&device_info=app&mch_id=1492985202&nonce_str=123&notify_url=https://bestlarp.com&openid="+openid+"&out_trade_no="+trade_no+"&total_fee="+total_fee+"&trade_type=JSAPI&key="+mch_key
+	var signature = md5(signstring).toUpperCase()
+	var xmlbody = "<xml><appid>wxf0487d45228f02d3</appid>" +
+   "<body>test</body>"+
+   "<device_info>app</device_info>"+
+   "<mch_id>1492985202</mch_id>"+
+   "<nonce_str>123</nonce_str>"+
+   "<openid>"+openid+"</openid>"+
+	 "<notify_url>https://bestlarp.com</notify_url>"+
+   "<out_trade_no>"+trade_no+"</out_trade_no>"+
+   "<total_fee>"+ total_fee +"</total_fee>"+
+   "<trade_type>JSAPI</trade_type>"+
+   "<sign>"+signature+"</sign></xml>"
+		var options={
+			method:"POST",
+			url:orderurl,
+			body:xmlbody,
+			headers:headers}
+			request(options,function (error, response, body) {
+				parseString(body, function (err, result) {
+				    res.send(result);
+				});
+		 })
 });
 app.get('/',function(req,res){
 	res.send('working');

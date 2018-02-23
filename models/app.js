@@ -21,7 +21,7 @@ var userSchema = new mongoose.Schema({
 	gamename: String,
 	passcode :Number,
 	vote:[mongoose.Schema.Types.Mixed],
-    roundnumber:Number,
+  roundnumber:Number,
 	cluestatus:[mongoose.Schema.Types.Mixed],
 	//character
 	gamename: String,
@@ -29,9 +29,6 @@ var userSchema = new mongoose.Schema({
 	banlocation :Number,
 	characterdescription:String,
 	charactersex:String,
-	characterbackground:String,
-	characterscandal:[String],
-	characterobjective:[String],
 	characterplot:[mongoose.Schema.Types.Mixed],
 	characterinfo:[mongoose.Schema.Types.Mixed],
 	characterabilityid:String,
@@ -49,11 +46,17 @@ var userSchema = new mongoose.Schema({
 	mapurl:String,
 	instruction:[mongoose.Schema.Types.Mixed],
 	descripion:String,
+	detailDescription:[mongoose.Schema.Types.Mixed],
 	actionpoint:Number,
 	cluelocation:[mongoose.Schema.Types.Mixed],
 	mainplot:[mongoose.Schema.Types.Mixed],
 	characterlist:[mongoose.Schema.Types.Mixed],
-	cluestatus:[mongoose.Schema.Types.Mixed]
+	cluestatus:[mongoose.Schema.Types.Mixed],
+	//general
+	date:{ type: Date, default: Date.now },
+	//openid
+	purchase:[mongoose.Schema.Types.Mixed],
+	login:[mongoose.Schema.Types.Mixed]
 });
 
 
