@@ -89,9 +89,14 @@ app.use('/unionid',function(req,res){
 	 console.log(result)
 	 var openidpromise = appdb.find({ type:'openid',id: result.openid }).exec()
 	 openidpromise.then(openid=>{
-		 console.log(openid)
 		 if (openid.length==1) {
 			 var newlogin = openid[0].login.concat([new Date()])
+				 console.log(newlogin)
+			 //Changed
+			 if (newlogin.length>20){
+				 console.log("slice")
+				 newlogin = newlogin.slice(newlogin.length-20)
+			 }
 			 	appdb.findOneAndUpdate({ id: result.openid }, { login: newlogin }).exec()
 		 } else {
 			 var newopenid = new appdb({
@@ -99,7 +104,7 @@ app.use('/unionid',function(req,res){
 				 id: result.openid
 			 });
 			 newopenid.save(function (err, newuser) {
-				 });
+			 });
 		 }
 	 })
 	 res.send(result.openid);
@@ -139,7 +144,7 @@ app.post('/unifiedorder',function(req,res){
 		 })
 });
 app.get('/',function(req,res){
-	res.send('working');
+	res.send('No content please close window.');
 });
 app.use('/pic',function(req,res){
 	 var img = fs.readFileSync('./pic'+ req.path);
@@ -162,11 +167,20 @@ console.log('API is running on 3000')*/
 wss.on('connection', function connection(ws) {
     ws.on('message', function incoming(message) {
 		var data = JSON.parse(message)
+		console.log(data)
 		if (data.message=="join"){
 		ws.id= data.table_id
-		}
-		if (data.message=="ping"){
+		}else if (data.message=="ping"){
 			ws.send(message)
+		}else if(data.message==="actionpoint"){
+			console.log("setactionpoint")
+			var getusers = appdb.find({ type:'user',tableid: data.tableid }).exec()
+			getusers.then(users=>{
+				users.map((user)=>{
+					appdb.findByIdAndUpdate(user._id, { actionpoint:user.actionpoint+data.content }).exec()
+				})
+				wss.broadcast(message,data.table_id);
+			})
 		}else{
 	    wss.broadcast(message,data.table_id);
 		}
