@@ -151,6 +151,34 @@ app.use('/pic',function(req,res){
      //res.writeHead(200, {'Content-Type': 'image/png' });
      res.end(img, 'binary');
 });
+app.post('/clue',function(req,res){
+	//console.log(req.body)
+	var locationid=parseInt(req.body.locationid)
+	appdb.findById(req.body.table_id, function (err, doc) {
+			console.log(doc.cluestatus)
+		 if (doc.cluestatus[locationid].includes(true)){
+				var indexes = [], i;
+				for(i = 0; i < doc.cluestatus[locationid].length; i++){
+						if (doc.cluestatus[locationid][i] === true){
+							indexes.push(i);
+						}
+				}
+				var clueid = indexes[Math.floor(Math.random() * indexes.length)];
+				newstatus = doc.cluestatus.map((loc, sidx) => {
+		      if (locationid !== sidx) return loc;
+		      return loc.map((clue, ssidx) => {
+			      if (clueid !== ssidx) return clue;
+			      return false
+			    });
+		    });
+				doc.update({cluestatus:newstatus}).exec()
+			  res.send({clueid:clueid});
+		 }else{
+		   res.send({clueid:-1});
+		 }
+	})
+});
+
 wss.broadcast = function broadcast(message,table_id) {
   wss.clients.forEach(function each(client) {
 	  //var condition = { message:"Your table_id is "+ client.id + ", but target table_id id " + table_id}
