@@ -77,6 +77,7 @@ app.post('/uploadimage',function(req, res) {
   });
 });
 app.use('/auth',require('./routes/auth'));
+app.use('/wxauth',require('./routes/wxauth'));
 app.use('/user',require('./routes/user'));
 app.use('/unionid',function(req,res){
 	const weixinurl = "https://api.weixin.qq.com/sns/jscode2session?"
@@ -110,6 +111,32 @@ app.use('/unionid',function(req,res){
 	 res.send(result.openid);
 	 //console.log(result.openid);
 	 });
+});
+app.use('/webunionid',function(req,res){
+	const openurl = "https://api.weixin.qq.com/sns/oauth2/access_token?"
+	console.log(req.query)
+	var appid = req.query.appid
+	var secret = req.query.secret
+	var code= req.query.code
+	var grant_type="authorization_code"
+	request(openurl+'appid='+appid+'&secret='+secret+'&code='+code+'&grant_type='+grant_type, function (error, response, body) {
+	 var result=JSON.parse(body)
+	 res.send(body);
+	 console.log(result)
+	 })
+	 //console.log(result.openid);
+});
+app.use('/webuserinfo',function(req,res){
+	const openurl = "https://api.weixin.qq.com/sns/userinfo?"
+	console.log(req.query)
+	var openid = req.query.openid
+	var access_token= req.query.access_token
+	request(openurl+'access_token='+access_token+'&openid='+openid, function (error, response, body) {
+	 var result=JSON.parse(body)
+	 res.send(body);
+	 console.log(result)
+	 })
+	 //console.log(result.openid);
 });
 app.post('/unifiedorder',function(req,res){
 	const orderurl = "https://api.mch.weixin.qq.com/pay/unifiedorder"
