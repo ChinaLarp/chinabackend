@@ -170,6 +170,22 @@ app.post('/unifiedorder',function(req,res){
 				});
 		 })
 });
+app.use('/counttable',require('./routes/counttable'));
+app.post('/unlock',function(req,res){
+	var openid = req.body.openid
+	var gameid = req.body.gameid
+	var openidpromise = appdb.find({ type:'openid',id: openid }).exec()
+	openidpromise.then(thisopenid=>{
+		console.log(thisopenid[0].purchase)
+		if (thisopenid.length==1) {
+			var newpurchase = thisopenid[0].purchase.concat([gameid])
+			 appdb.findOneAndUpdate({ id: openid }, { purchase: newpurchase }).exec()
+			 res.send("done")
+		}else{
+				res.send("error")
+		}
+	})
+});
 app.get('/',function(req,res){
 	res.send('No content please close window.');
 });
