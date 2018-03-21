@@ -20,7 +20,23 @@ App.before('post',function(req, res, next){
     next()
   }else{
   res.status(401).json({ error:'Signature error'});
-}
+  }
+})
+App.after('post',function(req, res, next){
+    if("user"===req.body.type){
+      var tableid=req.body.tableid
+      var objectid=res.locals.bundle._id
+      App.findOne({type:"openid", id:req.body.usernickname}).exec(function (err, openid) {App.findByIdAndUpdate(objectid,{ $set: { "reference": openid._id } }).exec()})
+      //console.log(reference)
+      App.findOneAndUpdate({type:"table", tableid:tableid},{ $push: { "userreferences": objectid } }).exec()
+    }else if("purchase"===req.body.type){
+    	  var openid = req.body.openid
+    	  var gameid = req.body.gameid
+        var objectid = res.locals.bundle._id
+        App.findOneAndUpdate({type:"game", id:gameid},{ $push: { "purchasehistory": objectid } }).exec()
+        App.findOneAndUpdate({type:"openid", id:openid},{ $push: { "purchasehistory": objectid } }).exec()
+    }
+    next()
 })
 App.before('put',function(req, res, next){
   if(md5(req.params.id+"xiaomaomi")===req.body.signature){

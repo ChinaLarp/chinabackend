@@ -56,7 +56,12 @@ var userSchema = new mongoose.Schema({
 	date:{ type: Date, default: Date.now },
 	//openid
 	purchase:[mongoose.Schema.Types.Mixed],
-	login:[mongoose.Schema.Types.Mixed]
+	login:[mongoose.Schema.Types.Mixed],
+
+	//All references
+	userreferences:[{ type: mongoose.Schema.Types.ObjectId, ref: 'App' }],
+	purchasehistory:[{ type: mongoose.Schema.Types.ObjectId, ref: 'App' }],
+	reference:{ type: mongoose.Schema.Types.ObjectId, ref: 'App' }
 });
 
 
