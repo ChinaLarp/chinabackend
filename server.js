@@ -60,20 +60,20 @@ app.use(function (req, res, next) {
 //Routes
 app.use('/api',require('./routes/api'));
 app.post('/uploadimage',function(req, res) {
+	console.log(req.body)
   if (!req.files)
     return res.status(400).send('No files were uploaded.');
 		//console.log(req.files)
   // The name of the input field (i.e. "sampleFile") is used to retrieve the uploaded file
-  let image = req.files.image;
-	let filetype = req.files.image.mimetype=='image/jpeg'?'.jpg':'.png'
-	let filename = req.files.image.name
+  let image = req.files.file;
+	let filename =req.body.name + "." + req.files.file.name.split('.')[req.files.file.name.split('.').length-1]
 
 	//console.log('C:/Users/edwan/OneDrive/'+filename)
   // Use the mv() method to place the file somewhere on your server
   image.mv('./pic/'+filename, function(err) {
     if (err)
       return res.status(500).send(err);
-    res.send('File uploaded!');
+    res.send(filename);
   });
 });
 app.use('/auth',require('./routes/auth'));
