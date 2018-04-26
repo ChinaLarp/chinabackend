@@ -5,6 +5,7 @@ var md5= require('md5')
 
 var App = require('../models/app');
 var Web = require('../models/web');
+var Closet = require('../models/closet');
 
 
 App.methods(['get','put','post','delete']);
@@ -98,6 +99,17 @@ Web.after('post', function(req, res, next) {
 });
 
 Web.register(router,'/web');
+Closet.methods(['get','put','post','delete']);
+Closet.after('post', function(req, res, next) {
+  const unionid = req.body.owner
+  const objectid=res.locals.bundle._id
+  console.log(unionid)
+  if (req.body.type=="item"){
+    Closet.findOneAndUpdate({type:"user", id:unionid},{ $push: { "inventory": objectid } }).exec()
+  }
+  next()
+});
+Closet.register(router,'/closet');
 
 
 module.exports = router;

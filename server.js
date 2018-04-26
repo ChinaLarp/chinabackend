@@ -1,4 +1,5 @@
 var express = require('express');
+const sharp = require('sharp')
 var mongoose = require('mongoose');
 const fileUpload = require('express-fileupload');
 var bodyParser=require('body-parser');
@@ -8,6 +9,7 @@ var url = require('url');
 var fs = require('fs');
 var md5= require('md5')
 var appdb  = require('./models/app');
+var closetdb  = require('./models/closet');
 var request = require('request')
 var timestamp = require('unix-timestamp')
 var parseString = require('xml2js').parseString
@@ -66,15 +68,49 @@ app.post('/uploadimage',function(req, res) {
 		//console.log(req.files)
   // The name of the input field (i.e. "sampleFile") is used to retrieve the uploaded file
   let image = req.files.file;
+
 	let filename =req.body.name + "." + req.files.file.name.split('.')[req.files.file.name.split('.').length-1]
+	if (req.body.folder){
+		try {
+    	fs.mkdirSync("./pic/"+req.body.folder)
+	  } catch (err) {
+	    if (err.code !== 'EEXIST') throw err
+	  }
+		var destiny = './pic/' + req.body.folder + '/' + filename
+		var newdestiny = './pic/' + req.body.folder + '/new' + filename
+		image.mv(destiny, function(err) {
+	    if (err){
+		      return res.status(500).send(err);
+			}
+			res.send(newdestiny);
+			var imageprocess = sharp(destiny)
+			imageprocess.metadata()
+		  .then(function(metadata) {
+				//console.log(metadata)
+				var resized = imageprocess
+				if (metadata.width > 300){
+					resized = imageprocess.resize(300, Math.round(metadata.height*300/metadata.width))
+				}
+				return resized
+					.toFile(newdestiny,(err, info) => {
+						//console.log(err);
+						//console.log(info);
+						fs.copyFileSync(newdestiny, destiny);
+						fs.unlink(newdestiny);
+					})
+		  })
+	  });
+	}else{
+		image.mv('./pic/'+filename, function(err) {
+	    if (err)
+	      return res.status(500).send(err);
+	    res.send(filename);
+	  });
+	}
 
 	//console.log('C:/Users/edwan/OneDrive/'+filename)
   // Use the mv() method to place the file somewhere on your server
-  image.mv('./pic/'+filename, function(err) {
-    if (err)
-      return res.status(500).send(err);
-    res.send(filename);
-  });
+
 });
 app.use('/auth',require('./routes/auth'));
 app.use('/wxauth',require('./routes/wxauth'));
@@ -112,6 +148,39 @@ app.use('/unionid',function(req,res){
 	 //console.log(result.openid);
 	 });
 });
+app.use('/closetunionid',function(req,res){
+	const weixinurl = "https://api.weixin.qq.com/sns/jscode2session?"
+	var appid = req.query.appid
+	var secret = req.query.secret
+	var js_code= req.query.js_code
+	var grant_type="authorization_code"
+	request(weixinurl+'appid='+appid+'&secret='+secret+'&js_code='+js_code+'&grant_type='+grant_type, function (error, response, body) {
+	 var result=JSON.parse(body)
+	 console.log(result)
+	 var openidpromise = closetdb.find({ type:'user',id: result.openid }).exec()
+	 openidpromise.then(openid=>{
+		 if (openid.length==1) {
+			 var newlogin = openid[0].login.concat([new Date()])
+				 console.log(newlogin)
+			 //Changed
+			 if (newlogin.length>20){
+				 console.log("slice")
+				 newlogin = newlogin.slice(newlogin.length-20)
+			 }
+			 	closetdb.findOneAndUpdate({ id: result.openid }, { login: newlogin }).exec()
+		 } else {
+			 var newopenid = new closetdb({
+				 type: 'user',
+				 id: result.openid
+			 });
+			 newopenid.save(function (err, newuser) {
+			 });
+		 }
+	 })
+	 res.send(result.openid);
+	 //console.log(result.openid);
+	 });
+});
 app.use('/webunionid',function(req,res){
 	const openurl = "https://api.weixin.qq.com/sns/oauth2/access_token?"
 	console.log(req.query)
@@ -135,6 +204,8 @@ app.use('/webuserinfo',function(req,res){
 	 var result=JSON.parse(body)
 	 res.send(body);
 	 console.log(result)
+	 console.log(response)
+	 console.log(error)
 	 })
 	 //console.log(result.openid);
 });

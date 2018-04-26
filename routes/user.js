@@ -53,7 +53,7 @@ router.post('/', (req, res) => {
     });
     newuser.save(function (err, newuser) {
         if (err) {
-          res.status(500).json({ error: err })
+          res.json({ error: err })
         }else{
           res.json({ success: true })
         };
@@ -64,7 +64,7 @@ router.post('/', (req, res) => {
     } else {
       console.log("nonvalid")
 
-      res.status(400).json(errors);
+      res.json(errors);
     }
   });
 })
